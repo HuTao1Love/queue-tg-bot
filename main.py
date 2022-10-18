@@ -34,14 +34,11 @@ async def create_queue(message: types.Message):
         await message.answer("Эта очередь уже существует")
         return
 
-    buttons = [InlineKeyboardButton(str(num), callback_data=f"key/{num - 1}/{qname}") for num in range(1, size + 1)]
+    buttons = [InlineKeyboardButton(str(num) + "🟢", callback_data=f"key/{num - 1}/{qname}") for num in range(1, size + 1)]
     reset_button = InlineKeyboardButton("RESET", callback_data=f"reset/{qname}")
     stop_button = InlineKeyboardButton("STOP", callback_data=f"stop/{qname}")
-    keyboard = InlineKeyboardMarkup(5)
-    keyboard.add(*buttons).row()
-    keyboard.add(reset_button, stop_button)
-    queues[qname] = user_queue.Queue(message.from_user.id, keyboard, size=size)
-    await message.answer(f"{qname}:\n{queues[qname].get_print()}", reply_markup=keyboard)
+    queues[qname] = user_queue.Queue(message.from_user.id, [buttons, reset_button, stop_button], size=size)
+    await message.answer(f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].get_keyboard())
 
 
 @dp.message_handler(commands=["list"])
@@ -80,7 +77,7 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
     text, code = queues[qname].set(code, name)
     await bot.answer_callback_query(callback_query.id, text=text)
     if code:
-        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].keyboard)
+        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].get_keyboard())
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("stop"))
@@ -109,7 +106,7 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
 
     is_modifed = queues[qname].reset()
     if is_modifed:
-        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].keyboard)
+        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].get_keyboard())
     else:
         await bot.answer_callback_query(callback_query.id, text="Очередь и была пуста")
 

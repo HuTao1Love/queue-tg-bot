@@ -1,12 +1,19 @@
 from aiogram import types
+from aiogram.types import InlineKeyboardMarkup
 
 
 class Queue:
     def __init__(self, creator, keyboard, size=25):
         self.users = ["-" for i in range(size)]
-        self.keyboard: types.inline_keyboard = keyboard
+        self.buttons, self.reset_button, self.stop_button = keyboard
         self.creator = creator
         self.size = size
+
+    def get_keyboard(self):
+        keyboard = InlineKeyboardMarkup(5)
+        keyboard.add(*self.buttons).row()
+        keyboard.add(self.reset_button, self.stop_button)
+        return keyboard
 
     def get_print(self):
         text = ""
@@ -20,7 +27,8 @@ class Queue:
 
         if self.users[num] == value:
             self.users[num] = '-'
-            self.keyboard
+            self.buttons[num].text = self.buttons[num].text[:-1]
+            self.buttons[num].text += "🟢"
             return "Успешно отписался{ась}", True
 
         try:
@@ -28,6 +36,8 @@ class Queue:
             return "Уже в очереди", False
         except ValueError:
             self.users[num] = value
+            self.buttons[num].text = self.buttons[num].text[:-1]
+            self.buttons[num].text += "🔴"
             return "Успешная запись", True
 
     def reset(self):
