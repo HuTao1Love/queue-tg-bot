@@ -38,7 +38,8 @@ async def create_queue(message: types.Message):
     reset_button = InlineKeyboardButton("RESET", callback_data=f"reset/{qname}")
     stop_button = InlineKeyboardButton("STOP", callback_data=f"stop/{qname}")
     keyboard = InlineKeyboardMarkup(5)
-    keyboard.add(*buttons, reset_button, stop_button)
+    keyboard.add(*buttons).row()
+    keyboard.add(reset_button, stop_button)
     queues[qname] = user_queue.Queue(message.from_user.id, keyboard, size=size)
     await message.answer(f"{qname}:\n{queues[qname].get_print()}", reply_markup=keyboard)
 
@@ -66,8 +67,9 @@ async def shutdown(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
         return
 
-    await dp.stop_polling()
+    dp.stop_polling()
     pickle.dump(queues, open("queues.txt", "wb"))
+    exit()
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('key'))
