@@ -1,0 +1,5 @@
+/venv/
+token.txt
+/.idea/
+/__pycache__/
+queues.txt
