@@ -46,4 +46,5 @@ class Queue:
             if self.users[user] != "-":
                 is_modifed = True
             self.users[user] = "-"
+            self.buttons[user].text = str(user + 1) + "🟢"
         return is_modifed
