@@ -11,6 +11,7 @@ BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
     queues = pickle.load(f)
 queues: Dict[str, user_queue.Queue]
+CAN_CREATE_QUEUES = [751586125, 731492287, 406495448]
 
 with open('token.txt', 'r') as file:
     API_TOKEN = file.read()
@@ -23,6 +24,9 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=["createq", "createqueue", "startq", "startqueue"])
 async def create_queue(message: types.Message):
+    if message.from_user.id not in CAN_CREATE_QUEUES:
+        await message.answer("Ты не можешь создать очередь")
+        return
     try:
         size = int(message.text.split()[1])
         _, qname = message.text.split(maxsplit=2)[1:]
@@ -32,6 +36,9 @@ async def create_queue(message: types.Message):
 
     if qname in queues.keys():
         await message.answer("Эта очередь уже существует")
+        return
+    if '/' in qname:
+        await message.answer("Не добавляй / в название очереди")
         return
 
     buttons = [InlineKeyboardButton(str(num) + "🟢", callback_data=f"key/{num - 1}/{qname}") for num in range(1, size + 1)]
