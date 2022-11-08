@@ -80,7 +80,7 @@ async def shutdown(message: types.Message):
 async def insert_in_queue(callback_query: types.CallbackQuery):
     _, code, qname = callback_query.data.split("/")
     code = int(code)
-    name = callback_query.from_user.username
+    name = f"{callback_query.from_user.full_name} (@{callback_query.from_user.username})"
     text, code = queues[qname].set(code, name)
     await bot.answer_callback_query(callback_query.id, text=text)
     if code:
