@@ -1,20 +1,20 @@
+import asyncio
 from typing import Dict
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton
 import logging
 import user_queue
 import pickle
 
-
-API_TOKEN = "NO API TOKEN"
 BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
     queues = pickle.load(f)
 queues: Dict[str, user_queue.Queue]
 CAN_CREATE_QUEUES = [751586125, 731492287, 406495448]
 
-with open('token.txt', 'r') as file:
-    API_TOKEN = file.read()
+file = open('token.txt', 'r')
+API_TOKEN = file.read()
+file.close()
 
 logging.basicConfig(level=logging.INFO)
 
@@ -48,7 +48,19 @@ async def create_queue(message: types.Message):
     await message.answer(f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].get_keyboard())
 
 
-@dp.message_handler(commands=["list"])
+@dp.message_handler(commands=["delaystartq"])
+async def delay_create_queue(message: types.Message):
+    time = 10
+    if message.text.split()[1].startswith('t='):
+        time = int(message.text.split()[1][2:])
+        message.text = message.text.replace(message.text.split()[1] + " ", "")
+
+    await message.answer(f"Очередь запустится через {time} сек")
+    await asyncio.sleep(time)
+    await create_queue(message)
+
+
+@dp.message_handler(commands=["listq"])
 async def queue_list(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
         return
@@ -111,8 +123,8 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
         await bot.answer_callback_query(callback_query.id, text="Это может сделать только создатель очереди")
         return
 
-    is_modifed = queues[qname].reset()
-    if is_modifed:
+    is_modified = queues[qname].reset()
+    if is_modified:
         await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].get_keyboard())
     else:
         await bot.answer_callback_query(callback_query.id, text="Очередь и была пуста")
