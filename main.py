@@ -53,12 +53,19 @@ async def delay_create_queue(message: types.Message):
     time = 10
     if message.text.split()[1].startswith('t='):
         time = int(message.text.split()[1][2:])
+        if time % 10 != 0:
+            time -= time % 10 - 10
         message.text = message.text.replace(message.text.split()[1] + " ", "")
 
-    await message.answer(f"Очередь запустится через {time} сек")
-    await asyncio.sleep(time)
-    await create_queue(message)
+    start_time = time
 
+    callback_query = await message.answer(f"Очередь запустится через {time} сек")
+    while time != 0:
+        time -= 10
+        await asyncio.sleep(10)
+        await bot.edit_message_text(message_id=callback_query.message_id, chat_id=callback_query.chat.id, text=f"Очередь запустится через {time} (start={start_time}) сек")
+    await create_queue(message)
+    await bot.edit_message_text(message_id=callback_query.message_id, chat_id=callback_query.chat.id, text=f"Очередь запущена!")
 
 @dp.message_handler(commands=["listq"])
 async def queue_list(message: types.Message):
