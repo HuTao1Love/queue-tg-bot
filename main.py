@@ -28,7 +28,7 @@ async def my_id(message: types.Message):
     ans = f"Your id: `{message.from_user.id}`\nThis chat id: `{message.chat.id}`"
     if message.chat.id in CHAT_IDS.keys():
         ans += f" (defined as {CHAT_IDS[message.chat.id]})"
-    await message.answer(ans)
+    await message.answer(ans, parse_mode="MarkdownV2")
 
 
 @dp.message_handler(commands=["createq", "createqueue", "startq", "startqueue"])
@@ -137,14 +137,14 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
     text, code = queues[callback_query.message.chat.id][qname].set(code, user_id, name)
     await bot.answer_callback_query(callback_query.id, text=text)
     if code:
-        await bot.edit_message_text(message_id=callback_query.message.chat.id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()}", reply_markup=queues[callback_query.message.chat.id][qname].get_keyboard())
+        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()}", reply_markup=queues[callback_query.message.chat.id][qname].get_keyboard())
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith("stop"))
 async def delete_queue(callback_query: types.CallbackQuery):
     _, qname = callback_query.data.split("/")
     if qname not in queues[callback_query.message.chat.id].keys():
-        await bot.edit_message_text(message_id=callback_query.message.chat.id,
+        await bot.edit_message_text(message_id=callback_query.message.message_id,
                                     chat_id=callback_query.message.chat.id,
                                     text=f"{qname} (stopped)")
         return
@@ -153,20 +153,20 @@ async def delete_queue(callback_query: types.CallbackQuery):
         await bot.answer_callback_query(callback_query.id, text="Это может сделать только создатель очереди")
         return
 
-    await bot.edit_message_text(message_id=callback_query.message.chat.id, chat_id=callback_query.message.chat.id, text=f"{qname} (stopped):\n{queues[callback_query.message.chat.id][qname].get_print()}")
-    del queues[qname]
+    await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname} (stopped):\n{queues[callback_query.message.chat.id][qname].get_print()}")
+    del queues[callback_query.message.chat.id][qname]
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('reset'))
 async def insert_in_queue(callback_query: types.CallbackQuery):
     _, qname = callback_query.data.split("/")
-    if callback_query.from_user.id != queues[qname].creator and callback_query.from_user.id != BOT_CREATOR:
+    if callback_query.from_user.id != queues[callback_query.message.chat.id][qname].creator and callback_query.from_user.id != BOT_CREATOR:
         await bot.answer_callback_query(callback_query.id, text="Это может сделать только создатель очереди")
         return
 
-    is_modified = queues[qname].reset()
+    is_modified = queues[callback_query.message.chat.id][qname].reset()
     if is_modified:
-        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[qname].get_print()}", reply_markup=queues[qname].get_keyboard())
+        await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()}", reply_markup=queues[callback_query.message.chat.id][qname].get_keyboard())
     else:
         await bot.answer_callback_query(callback_query.id, text="Очередь и была пуста")
 
