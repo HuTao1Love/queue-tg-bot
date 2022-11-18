@@ -5,6 +5,7 @@ from aiogram.types import InlineKeyboardButton
 import logging
 import user_queue
 import pickle
+import chkmsg
 
 BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
@@ -27,6 +28,13 @@ logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
+
+
+@dp.message_handler()
+async def echo(message: types.Message):
+    result = await chkmsg.check_message(message)
+    if not result:
+        return # ЗАГЛУШКА НА БУДУЩЕЕ
 
 
 @dp.message_handler(commands=["myid"])
