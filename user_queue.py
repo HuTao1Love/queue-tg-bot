@@ -20,10 +20,11 @@ class Queue:
         keyboard.add(self.reset_button, self.stop_button)
         return keyboard
 
-    def get_print(self):
+    def get_print(self, full=True):
         text = ""
         for num, value in enumerate(self.users, 1):
-            text += f"{num}) {value.name.replace('NO_VALUE', '-')}\n"
+            if value.user_id != 0 or full:
+                text += f"{num}) {value.name}\n"
         return text
 
     def set(self, num: int, user_id: int, value: str):

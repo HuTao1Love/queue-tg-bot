@@ -10,7 +10,13 @@ BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
     queues = pickle.load(f)
 queues: Dict[int, Dict[str, user_queue.Queue]]
-CAN_CREATE_QUEUES = [751586125, 731492287, 406495448, 656638834]
+CAN_CREATE_QUEUES = [
+    751586125,            # ME
+    731492287,
+    406495448,
+    656638834,            # VIKA NEMOLYAEVA, 04
+    409428213             # SERGEI PAPIKIAN, ADAPTER
+]
 CHAT_IDS = {-1001584422120: "03у26", -1001602645423: "04у26"}
 
 file = open('token.txt', 'r')
@@ -25,9 +31,9 @@ dp = Dispatcher(bot)
 
 @dp.message_handler(commands=["myid"])
 async def my_id(message: types.Message):
-    ans = f"Your id: `{message.from_user.id}`\nThis chat id: `{message.chat.id}`"
+    ans = f"Your id: ***`{message.from_user.id}`***\nThis chat id: ***`{message.chat.id}`***"
     if message.chat.id in CHAT_IDS.keys():
-        ans += f" (defined as {CHAT_IDS[message.chat.id]})"
+        ans += f" \(defined as {CHAT_IDS[message.chat.id]}\)"
     await message.answer(ans, parse_mode="MarkdownV2")
 
 
@@ -37,7 +43,7 @@ async def create_queue(message: types.Message):
         await message.answer("Ты не можешь создать очередь")
         return
     try:
-        size = int(message.text.split()[1])
+        size = min(int(message.text.split()[1]), 98)
         _, qname = message.text.split(maxsplit=2)[1:]
     except ValueError:
         qname = message.text.split(maxsplit=1)[1]
@@ -153,7 +159,7 @@ async def delete_queue(callback_query: types.CallbackQuery):
         await bot.answer_callback_query(callback_query.id, text="Это может сделать только создатель очереди")
         return
 
-    await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname} (stopped):\n{queues[callback_query.message.chat.id][qname].get_print()}")
+    await bot.edit_message_text(message_id=callback_query.message.message_id, chat_id=callback_query.message.chat.id, text=f"{qname} (stopped):\n{queues[callback_query.message.chat.id][qname].get_print(full=False)}")
     del queues[callback_query.message.chat.id][qname]
 
 
