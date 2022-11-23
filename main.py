@@ -3,7 +3,6 @@ from typing import Dict
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton
 from aiohttp import ClientSession
-import logging
 import user_queue
 import pickle
 
@@ -11,13 +10,13 @@ BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
     queues = pickle.load(f)
 queues: Dict[int, Dict[str, user_queue.Queue]]
-CAN_CREATE_QUEUES = [
-    751586125,            # ME
-    731492287,
-    406495448,
-    656638834,            # VIKA NEMOLYAEVA, 04
-    409428213             # SERGEI PAPIKIAN, ADAPTER
-]
+CAN_CREATE_QUEUES = {
+    user_queue.Admin(751586125, "Hu Tao", "Создатель бота"),
+    user_queue.Admin(731492287, "Masha", "🥰🥰староста🥰🥰"),
+    user_queue.Admin(406495448, "Egor", "Злобный клоун"),
+    user_queue.Admin(656638834, "Vika Nemolyaeva", "4я группа"),
+    user_queue.Admin(409428213, "Ser Gey Papik(yan)", "Adapter")
+}
 CHAT_IDS = {-1001584422120: "03у26", -1001602645423: "04у26"}
 
 file = open('token.txt', 'r')
@@ -39,7 +38,7 @@ dp = Dispatcher(bot)
 async def my_id(message: types.Message):
     ans = f"Your id: ***`{message.from_user.id}`***\nThis chat id: ***`{message.chat.id}`***"
     if message.chat.id in CHAT_IDS.keys():
-        ans += f" \(defined as {CHAT_IDS[message.chat.id]}\)"
+        ans += f" \\(defined as {CHAT_IDS[message.chat.id]}\\)"
     await message.answer(ans, parse_mode="MarkdownV2")
 
 
@@ -80,6 +79,9 @@ async def get_queue_from_google(message: types.Message):
     if message.from_user.id not in CAN_CREATE_QUEUES:
         await message.answer("Ты не можешь создать очередь")
         return
+    if message.chat.id not in CHAT_IDS.keys():
+        await message.answer("Этот чат не определен")
+        return
     msg = "Лаба ФИО\n"
     async with ClientSession() as session:
         async with session.get(URL) as response:
@@ -114,6 +116,7 @@ async def delay_create_queue(message: types.Message):
 @dp.message_handler(commands=["listq"])
 async def queue_list(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
+        await message.answer("Only for Hu Tao")
         return
 
     msg = "Очереди:\n"
@@ -129,6 +132,7 @@ async def queue_list(message: types.Message):
 @dp.message_handler(commands=["delete"])
 async def delete_all(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
+        await message.answer("Only for Hu Tao")
         return
 
     for i in list(queues[message.chat.id].keys()):
@@ -139,6 +143,7 @@ async def delete_all(message: types.Message):
 @dp.message_handler(commands=["deleteall"])
 async def delete_all(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
+        await message.answer("Only for Hu Tao")
         return
 
     for i in list(queues.keys()):
@@ -149,6 +154,7 @@ async def delete_all(message: types.Message):
 @dp.message_handler(commands=["shutdown", "exit"])
 async def shutdown(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
+        await message.answer("Only for Hu Tao")
         return
 
     dp.stop_polling()

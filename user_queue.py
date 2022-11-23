@@ -7,6 +7,13 @@ class User:
         self.name = name
 
 
+class Admin:
+    def __init__(self, user_id, name, description):
+        self.user_id = user_id
+        self.name = name
+        self.description = description
+
+
 class Queue:
     def __init__(self, creator, keyboard, size=25):
         self.users = [User(0, "-") for i in range(size)]
