@@ -2,6 +2,7 @@ import asyncio
 from typing import Dict
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton
+from aiohttp import ClientSession
 import logging
 import user_queue
 import pickle
@@ -21,6 +22,13 @@ CHAT_IDS = {-1001584422120: "03у26", -1001602645423: "04у26"}
 
 file = open('token.txt', 'r')
 API_TOKEN = file.read()
+file.close()
+
+file = open('gtoken.txt', 'r')
+URL = f"https://sheets.googleapis.com/v4/spreadsheets/" \
+      f"1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno/values/" \
+      f"%D0%9E%D1%87%D0%B5%D1%80%D0%B5%D0%B4%D1%8C%20%2803%29!A:C?" \
+      f"key={file.read().strip()}"
 file.close()
 
 bot = Bot(token=API_TOKEN)
@@ -65,6 +73,22 @@ async def create_queue(message: types.Message):
     stop_button = InlineKeyboardButton("STOP", callback_data=f"stop/{qname}")
     queues[message.chat.id][qname] = user_queue.Queue(message.from_user.id, [buttons, reset_button, stop_button], size=size)
     await message.answer(f"{qname}:\n{queues[message.chat.id][qname].get_print()}", reply_markup=queues[message.chat.id][qname].get_keyboard())
+
+
+@dp.message_handler(commands=["getqueue"])
+async def get_queue_from_google(message: types.Message):
+    if message.from_user.id not in CAN_CREATE_QUEUES:
+        await message.answer("Ты не можешь создать очередь")
+        return
+    msg = "Лаба ФИО"
+    async with ClientSession() as session:
+        async with session.get(URL) as response:
+            values = await response.json()
+
+            for name, _, labwork_id in values.get("values")[1:]:
+                msg += f"{labwork_id:< 3} {name}\n"
+
+    await message.answer(text=msg)
 
 
 @dp.message_handler(commands=["delaystartq"])
