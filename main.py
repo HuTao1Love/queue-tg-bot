@@ -80,7 +80,7 @@ async def get_queue_from_google(message: types.Message):
     if message.from_user.id not in CAN_CREATE_QUEUES:
         await message.answer("Ты не можешь создать очередь")
         return
-    msg = "Лаба ФИО"
+    msg = "Лаба ФИО\n"
     async with ClientSession() as session:
         async with session.get(URL) as response:
             values = await response.json()
