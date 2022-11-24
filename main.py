@@ -5,6 +5,7 @@ from aiogram.types import InlineKeyboardButton
 from aiohttp import ClientSession
 import user_queue
 import pickle
+from chkmsg import *
 
 BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
@@ -30,7 +31,7 @@ file.close()
 file = open('gtoken.txt', 'r')
 URL_TEMPLATE = f"https://sheets.googleapis.com/v4/spreadsheets/" \
       f"1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno/values/" \
-      f"Очередь (TEMPLATE)!A:C?" \
+      f"Очередь (TEMPLATE)!A:D?" \
       f"key={file.read().strip()}"
 URLS = {}
 URLS[-1001584422120] = URL_TEMPLATE.replace("TEMPLATE", "03")
@@ -97,10 +98,10 @@ async def get_queue_from_google(message: types.Message):
     msg = "Из таблички:\n"
     async with ClientSession() as session:
         async with session.get(URLS[message.chat.id]) as response:
-            values = await response.json()
+            values = (await response.json()).get("values")
 
-            for name, _, labwork_id in values.get("values")[1:]:
-                msg += f"{labwork_id: <3} {name}\n"
+            for time, name, group, labwork_id in values:
+                msg += f"{labwork_id: <3} {name} ({time})\n"
 
     await message.answer(text=msg)
 
@@ -226,6 +227,12 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
                                     reply_markup=queues[callback_query.message.chat.id][qname].get_keyboard())
     else:
         await bot.answer_callback_query(callback_query.id, text="Очередь и была пуста")
+
+
+@dp.message_handler()
+async def echo(message: types.Message):
+    if check_message(message):
+        pass
 
 
 executor.start_polling(dp, skip_updates=True)
