@@ -29,13 +29,12 @@ API_TOKEN = file.read()
 file.close()
 
 file = open('gtoken.txt', 'r')
+GOOGLE_TOKEN = file.read().strip()
 URL_TEMPLATE = f"https://sheets.googleapis.com/v4/spreadsheets/" \
                f"1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno/values/" \
                f"Очередь (TEMPLATE)!A:D?" \
-               f"key={file.read().strip()}"
-URLS = {}
-URLS[-1001584422120] = URL_TEMPLATE.replace("TEMPLATE", "03")
-URLS[-1001602645423] = URL_TEMPLATE.replace("TEMPLATE", "04")
+               f"key={GOOGLE_TOKEN}"
+URLS = {-1001584422120: URL_TEMPLATE.replace("TEMPLATE", "03"), -1001602645423: URL_TEMPLATE.replace("TEMPLATE", "04")}
 file.close()
 
 bot = Bot(token=API_TOKEN)
@@ -189,7 +188,7 @@ async def me(message: types.Message):
             URL_TEMPLATE = f"https://sheets.googleapis.com/v4/spreadsheets/" \
                            f"{table}/values/" \
                            f"{tab}!{start}:{end}?" \
-                           f"key=AIzaSyBNMHLRV1v7Q_6-gZQH4Jwf7CTjj3c29n8"
+                           f"key={GOOGLE_TOKEN}"
             async with ClientSession() as session:
                 async with session.get(URL_TEMPLATE) as response:
                     return (await response.json()).get("values")
