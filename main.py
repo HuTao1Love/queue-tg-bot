@@ -1,5 +1,4 @@
 import asyncio
-from typing import Dict
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton
 from aiohttp import ClientSession
@@ -21,8 +20,8 @@ CAN_CREATE_QUEUES = {
 }
 CHAT_IDS = {-1001584422120: "03у26", -1001602645423: "04у26"}
 
-queues: Dict[int, Dict[int, user_queue.Queue]] = queues
-CAN_CREATE_QUEUES: Dict[int, user_queue.Admin] = CAN_CREATE_QUEUES
+queues: dict[int, dict[int, user_queue.Queue]] = queues
+CAN_CREATE_QUEUES: dict[int, user_queue.Admin] = CAN_CREATE_QUEUES
 
 file = open('token.txt', 'r')
 API_TOKEN = file.read()
