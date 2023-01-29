@@ -24,4 +24,5 @@ def create_url(num: str): return f"https://sheets.googleapis.com/v4/spreadsheets
     f"Очередь ({num})!A:D?" \
     f"key={GOOGLE_TOKEN}"
 
+
 URLS = {-1001584422120: create_url("03"), -1001602645423: create_url("04")}

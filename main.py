@@ -16,6 +16,7 @@ queues: dict[int, dict[int, user_queue.Queue]] = queues
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
+
 @dp.message_handler(commands=["myid"])
 async def my_id(message: types.Message):
     ans = f"Your id: ***`{message.from_user.id}`***\nThis chat id: ***`{message.chat.id}`***"
@@ -56,7 +57,8 @@ async def create_queue(message: types.Message):
 
     buttons = [InlineKeyboardButton(str(num) + "🟢", callback_data=f"key/{num - 1}/{qname}") for num in
                range(1, size + 1)]
-    reset_button = InlineKeyboardButton("RESET", callback_data=f"reset/{qname}")
+    reset_button = InlineKeyboardButton(
+        "RESET", callback_data=f"reset/{qname}")
     stop_button = InlineKeyboardButton("STOP", callback_data=f"stop/{qname}")
     queues[message.chat.id][qname] = user_queue.Queue(message.from_user.id, [buttons, reset_button, stop_button],
                                                       size=size)
@@ -171,9 +173,9 @@ async def me(message: types.Message):
         values = await generate_url()
         values = values[0], [i for i in values[1:] if user in i][0]
         values = list(map(list, zip(*values)))
-        values = [[i, j] for (i, j) in values if i in ["Итого", "Итог фулл", 'Total', 'Mid term score']]
+        values = [[i, j] for (i, j) in values if i in [
+            "Итого", "Итог фулл", 'Total', 'Mid term score']]
         return values[0][1]
-
 
     tables = {
         "programming": ["1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno", "Баллы", "A3", "Q"],
@@ -211,7 +213,8 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
     code = int(code)
     user_id = callback_query.from_user.id
     name = f"{callback_query.from_user.full_name} (@{callback_query.from_user.username})"
-    text, code = queues[callback_query.message.chat.id][qname].set(code, user_id, name)
+    text, code = queues[callback_query.message.chat.id][qname].set(
+        code, user_id, name)
     await bot.answer_callback_query(callback_query.id, text=text)
     if code:
         await asyncio.sleep(0.1)
