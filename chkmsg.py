@@ -1,9 +1,6 @@
 import logging
-from typing import Dict
 
-loggers = {}
-loggers: Dict[str, logging.Logger]
-
+loggers: dict[str, logging.Logger] = {}
 
 def check_message(message):
     if message.chat.id not in loggers.keys():

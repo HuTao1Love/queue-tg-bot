@@ -4,3 +4,5 @@ gtoken.txt
 /.idea/
 /__pycache__/
 queues.txt
+.env
+/.vscode/
