@@ -88,6 +88,9 @@ async def get_queue_from_google(message: types.Message):
 
 @dp.message_handler(commands=["delaystartq"])
 async def delay_create_queue(message: types.Message):
+    if message.from_user.id not in CAN_CREATE_QUEUES:
+        await message.answer("Ты не можешь создать очередь")
+        return
     if len(message.text.split()) < 2:
         await message.answer("Usage: /delaystartq t=<await time> <delay, default=10> <qname>")
         return
