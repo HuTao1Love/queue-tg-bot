@@ -1,7 +1,7 @@
 from user_queue import Admin
 from load_env import GOOGLE_TOKEN
 
-__all__ = ["BOT_CREATOR", "CAN_CREATE_QUEUES", "CHAT_IDS", "URLS"]
+__all__ = ["BOT_CREATOR", "CAN_CREATE_QUEUES", "CHAT_IDS", "URLS", "MAX_QUEUE_SIZE"]
 
 BOT_CREATOR = 751586125
 
@@ -26,3 +26,9 @@ def create_url(num: str): return f"https://sheets.googleapis.com/v4/spreadsheets
 
 
 URLS = {-1001584422120: create_url("03"), -1001602645423: create_url("04")}
+
+MAX_QUEUE_SIZE = 98 # why 98?
+
+DEFAULT_QUEUE_SIZE = 25
+
+MAX_QUEUE_NAME_LENGTH = 30

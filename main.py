@@ -6,7 +6,7 @@ import user_queue
 import pickle
 from chkmsg import *
 from load_env import API_TOKEN, GOOGLE_TOKEN
-from config import BOT_CREATOR, CAN_CREATE_QUEUES, CHAT_IDS, URLS
+from config import BOT_CREATOR, CAN_CREATE_QUEUES, CHAT_IDS, DEFAULT_QUEUE_SIZE, MAX_QUEUE_NAME_LENGTH, URLS, MAX_QUEUE_SIZE
 
 with open("queues.txt", "rb") as f:
     queues = pickle.load(f)
@@ -36,11 +36,11 @@ async def create_queue(message: types.Message):
         await message.answer("Usage: /createqueue <size, default=25> <qname>")
         return
     try:
-        size = min(int(message.text.split()[1]), 98)
+        size = min(int(message.text.split()[1]), MAX_QUEUE_SIZE)
         _, qname = message.text.split(maxsplit=2)[1:]
     except ValueError:
         qname = message.text.split(maxsplit=1)[1]
-        size = 25
+        size = DEFAULT_QUEUE_SIZE
 
     if message.chat.id not in queues.keys():
         queues[message.chat.id] = {}
@@ -51,7 +51,7 @@ async def create_queue(message: types.Message):
     if '/' in qname:
         await message.answer("Не добавляй / в название очереди")
         return
-    if len(qname) > 30:
+    if len(qname) > MAX_QUEUE_NAME_LENGTH:
         await message.answer("Слишком длинное название")
         return
 
