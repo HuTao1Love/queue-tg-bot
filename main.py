@@ -94,6 +94,8 @@ async def delay_create_queue(message: types.Message):
     time = 10
     if message.text.split()[1].startswith('t='):
         time = int(message.text.split()[1][2:])
+        if time < 0:
+            time = 0
         if time % 10 != 0:
             time -= time % 10 - 10
         message.text = message.text.replace(message.text.split()[1] + " ", "")
