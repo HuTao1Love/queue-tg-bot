@@ -95,17 +95,19 @@ async def delay_create_queue(message: types.Message):
     if message.text.split()[1].startswith('t='):
         time = int(message.text.split()[1][2:])
         if time < 0:
-            time = 0
-        if time % 10 != 0:
-            time -= time % 10 - 10
+            await message.answer("Задержка не может быть отрицательной")
+            return
         message.text = message.text.replace(message.text.split()[1] + " ", "")
 
+    SLEEP_TIME = 10
     start_time = time
 
     callback_query = await message.answer(f"Очередь запустится через {time} сек")
-    while time != 0:
-        time -= 10
-        await asyncio.sleep(10)
+    while True:
+        await asyncio.sleep(min(SLEEP_TIME, time))
+        time -= SLEEP_TIME
+        if time <= 0:
+            break
         await bot.edit_message_text(message_id=callback_query.message_id, chat_id=callback_query.chat.id,
                                     text=f"Очередь запустится через {time} (start={start_time}) сек")
     await create_queue(message)
@@ -250,7 +252,7 @@ async def reset_queue(callback_query: types.CallbackQuery):
     if callback_query.from_user.id != queues[callback_query.message.chat.id][qname].creator and callback_query.from_user.id != BOT_CREATOR:
         await bot.answer_callback_query(callback_query.id, text="Это может сделать только создатель очереди")
         return
-    
+
     is_modified = queues[callback_query.message.chat.id][qname].reset()
     if is_modified:
         await bot.edit_message_text(message_id=callback_query.message.message_id,
