@@ -1,44 +1,17 @@
 import asyncio
-import time
-from typing import Dict
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardButton
 from aiohttp import ClientSession
 import user_queue
 import pickle
 from chkmsg import *
+from load_env import API_TOKEN, GOOGLE_TOKEN
+from config import BOT_CREATOR, CAN_CREATE_QUEUES, CHAT_IDS, DEFAULT_QUEUE_SIZE, MAX_QUEUE_NAME_LENGTH, URLS, MAX_QUEUE_SIZE
 
-BOT_CREATOR = 751586125
 with open("queues.txt", "rb") as f:
     queues = pickle.load(f)
 
-CAN_CREATE_QUEUES = {
-    751586125: user_queue.Admin(751586125, "Hu Tao", "Hu Tao"),
-    731492287: user_queue.Admin(731492287, "Masha", "🥰🥰староста🥰🥰"),
-    406495448: user_queue.Admin(406495448, "Egor", "Злобный клоун"),
-    656638834: user_queue.Admin(656638834, "Vika Nemolyaeva", "Lisa Malyaeva"),
-    409428213: user_queue.Admin(409428213, "Sergey Papikyan", "Ser Gey Papik(yan)"),
-    433013981: user_queue.Admin(433013981, "Danya", "Сахарный человек 🍭"),
-    601351747: user_queue.Admin(601351747, "Сергей Бородавко", "Боба"),
-    344909548: user_queue.Admin(344909548, "??", "??"),
-}
-CHAT_IDS = {-1001584422120: "03у26", -1001602645423: "04у26"}
-
-queues: Dict[int, Dict[int, user_queue.Queue]] = queues
-CAN_CREATE_QUEUES: Dict[int, user_queue.Admin] = CAN_CREATE_QUEUES
-
-file = open('token.txt', 'r')
-API_TOKEN = file.read()
-file.close()
-
-file = open('gtoken.txt', 'r')
-GOOGLE_TOKEN = file.read().strip()
-URL_TEMPLATE = f"https://sheets.googleapis.com/v4/spreadsheets/" \
-               f"1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno/values/" \
-               f"Очередь (TEMPLATE)!A:D?" \
-               f"key={GOOGLE_TOKEN}"
-URLS = {-1001584422120: URL_TEMPLATE.replace("TEMPLATE", "03"), -1001602645423: URL_TEMPLATE.replace("TEMPLATE", "04")}
-file.close()
+queues: dict[int, dict[str, user_queue.Queue]] = queues
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
@@ -63,11 +36,11 @@ async def create_queue(message: types.Message):
         await message.answer("Usage: /createqueue <size, default=25> <qname>")
         return
     try:
-        size = min(int(message.text.split()[1]), 98)
+        size = min(int(message.text.split()[1]), MAX_QUEUE_SIZE)
         _, qname = message.text.split(maxsplit=2)[1:]
     except ValueError:
         qname = message.text.split(maxsplit=1)[1]
-        size = 25
+        size = DEFAULT_QUEUE_SIZE
 
     if message.chat.id not in queues.keys():
         queues[message.chat.id] = {}
@@ -78,13 +51,14 @@ async def create_queue(message: types.Message):
     if '/' in qname:
         await message.answer("Не добавляй / в название очереди")
         return
-    if len(qname) > 30:
+    if len(qname) > MAX_QUEUE_NAME_LENGTH:
         await message.answer("Слишком длинное название")
         return
 
     buttons = [InlineKeyboardButton(str(num) + "🟢", callback_data=f"key/{num - 1}/{qname}") for num in
                range(1, size + 1)]
-    reset_button = InlineKeyboardButton("RESET", callback_data=f"reset/{qname}")
+    reset_button = InlineKeyboardButton(
+        "RESET", callback_data=f"reset/{qname}")
     stop_button = InlineKeyboardButton("STOP", callback_data=f"stop/{qname}")
     queues[message.chat.id][qname] = user_queue.Queue(message.from_user.id, [buttons, reset_button, stop_button],
                                                       size=size)
@@ -114,22 +88,29 @@ async def get_queue_from_google(message: types.Message):
 
 @dp.message_handler(commands=["delaystartq"])
 async def delay_create_queue(message: types.Message):
+    if message.from_user.id not in CAN_CREATE_QUEUES:
+        await message.answer("Ты не можешь создать очередь")
+        return
     if len(message.text.split()) < 2:
         await message.answer("Usage: /delaystartq t=<await time> <delay, default=10> <qname>")
         return
     time = 10
     if message.text.split()[1].startswith('t='):
         time = int(message.text.split()[1][2:])
-        if time % 10 != 0:
-            time -= time % 10 - 10
+        if time < 0:
+            await message.answer("Задержка не может быть отрицательной")
+            return
         message.text = message.text.replace(message.text.split()[1] + " ", "")
 
+    SLEEP_TIME = 10
     start_time = time
 
     callback_query = await message.answer(f"Очередь запустится через {time} сек")
-    while time != 0:
-        time -= 10
-        await asyncio.sleep(10)
+    while True:
+        await asyncio.sleep(min(SLEEP_TIME, time))
+        time -= SLEEP_TIME
+        if time <= 0:
+            break
         await bot.edit_message_text(message_id=callback_query.message_id, chat_id=callback_query.chat.id,
                                     text=f"Очередь запустится через {time} (start={start_time}) сек")
     await create_queue(message)
@@ -154,7 +135,7 @@ async def queue_list(message: types.Message):
 
 
 @dp.message_handler(commands=["delete"])
-async def delete_all(message: types.Message):
+async def delete(message: types.Message):
     if message.from_user.id != BOT_CREATOR:
         await message.answer("Only for Hu Tao")
         return
@@ -186,7 +167,7 @@ async def me(message: types.Message):
     except IndexError:
         user = 'Ягодин Захар Сергеевич'
 
-    async def get_data(table: str, tab: str, start: str, end: str, user: str):
+    async def get_data(user: str, table: str, tab: str, start: str, end: str, ):
         async def generate_url():
             URL_TEMPLATE = f"https://sheets.googleapis.com/v4/spreadsheets/" \
                            f"{table}/values/" \
@@ -199,9 +180,9 @@ async def me(message: types.Message):
         values = await generate_url()
         values = values[0], [i for i in values[1:] if user in i][0]
         values = list(map(list, zip(*values)))
-        values = [[i, j] for (i, j) in values if i in ["Итого", "Итог фулл", 'Total', 'Mid term score']]
+        values = [[i, j] for (i, j) in values if i in [
+            "Итого", "Итог фулл", 'Total', 'Mid term score']]
         return values[0][1]
-
 
     tables = {
         "programming": ["1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno", "Баллы", "A3", "Q"],
@@ -215,7 +196,7 @@ async def me(message: types.Message):
     for table, tab in tables.items():
         msg += f"{table}:\n"
         try:
-            msg += f"Total: {await get_data(*tab, user)}\n"
+            msg += f"Total: {await get_data(user, *tab)}\n"
         except IndexError:
             msg += "Not found\n"
         msg += "\n"
@@ -239,14 +220,14 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
     code = int(code)
     user_id = callback_query.from_user.id
     name = f"{callback_query.from_user.full_name} (@{callback_query.from_user.username})"
-    text, code = queues[callback_query.message.chat.id][qname].set(code, user_id, name)
+    text, code = queues[callback_query.message.chat.id][qname].set(
+        code, user_id, name)
     await bot.answer_callback_query(callback_query.id, text=text)
     if code:
-
-        time.sleep(0.1)
+        await asyncio.sleep(0.1)
         await bot.edit_message_text(message_id=callback_query.message.message_id,
                                     chat_id=callback_query.message.chat.id,
-                                    text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()} \n(Generated by {CAN_CREATE_QUEUES[queues[callback_query.message.chat.id][qname].creator].description})",
+                                    text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()} \n(Generated by {CAN_CREATE_QUEUES[queues[callback_query.message.chat.id][qname].creator.user_id].description})",
                                     reply_markup=queues[callback_query.message.chat.id][qname].get_keyboard())
 
 
@@ -269,7 +250,7 @@ async def delete_queue(callback_query: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('reset'))
-async def insert_in_queue(callback_query: types.CallbackQuery):
+async def reset_queue(callback_query: types.CallbackQuery):
     _, qname = callback_query.data.split("/")
     if callback_query.from_user.id != queues[callback_query.message.chat.id][qname].creator and callback_query.from_user.id != BOT_CREATOR:
         await bot.answer_callback_query(callback_query.id, text="Это может сделать только создатель очереди")
@@ -279,7 +260,7 @@ async def insert_in_queue(callback_query: types.CallbackQuery):
     if is_modified:
         await bot.edit_message_text(message_id=callback_query.message.message_id,
                                     chat_id=callback_query.message.chat.id,
-                                    text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()} \n(Generated by {CAN_CREATE_QUEUES[queues[callback_query.message.chat.id][qname].creator].description})",
+                                    text=f"{qname}:\n{queues[callback_query.message.chat.id][qname].get_print()} \n(Generated by {CAN_CREATE_QUEUES[queues[callback_query.message.chat.id][qname].creator.user_id].description})",
                                     reply_markup=queues[callback_query.message.chat.id][qname].get_keyboard())
     else:
         await bot.answer_callback_query(callback_query.id, text="Очередь и была пуста")

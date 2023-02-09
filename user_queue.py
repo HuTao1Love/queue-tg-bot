@@ -1,20 +1,28 @@
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from dataclasses import dataclass
 
 
+@dataclass
 class User:
-    def __init__(self, user_id, name):
-        self.user_id = user_id
-        self.name = name
+    user_id: int
+    name: str
 
 
+@dataclass
 class Admin:
-    def __init__(self, user_id, name, description):
-        self.user_id = user_id
-        self.name = name
-        self.description = description
+    user_id: int
+    name: str
+    description: str
 
 
 class Queue:
+    users: list[User]
+    buttons: list[InlineKeyboardButton]
+    reset_button: InlineKeyboardMarkup
+    stop_button: InlineKeyboardMarkup
+    creator: Admin
+    size: int
+
     def __init__(self, creator, keyboard, size=25):
         self.users = [User(0, "-") for i in range(size)]
         self.buttons, self.reset_button, self.stop_button = keyboard
