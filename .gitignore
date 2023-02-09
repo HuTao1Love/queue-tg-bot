@@ -1,7 +1,5 @@
 # secret key
-token.txt
-gtoken.txt
-.env
+*.env
 
 # database
 queues.txt

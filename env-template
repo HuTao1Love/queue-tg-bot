@@ -1,5 +1,0 @@
-GOOGLE_TOKEN=
-API_TOKEN=
-
-# create .env file in the root directory with fields above and fill them with secrets
-# or set them as environment variables
