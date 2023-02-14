@@ -20,7 +20,7 @@ class Queue:
     buttons: list[InlineKeyboardButton]
     reset_button: InlineKeyboardMarkup
     stop_button: InlineKeyboardMarkup
-    creator: Admin
+    creator: int
     size: int
 
     def __init__(self, creator, keyboard, size=25):
