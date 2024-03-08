@@ -5,11 +5,14 @@ from aiohttp import ClientSession
 import user_queue
 import pickle
 from chkmsg import *
-from load_env import API_TOKEN, GOOGLE_TOKEN
-from config import BOT_CREATOR, CAN_CREATE_QUEUES, CHAT_IDS, DEFAULT_QUEUE_SIZE, MAX_QUEUE_NAME_LENGTH, URLS, MAX_QUEUE_SIZE
+from load_env import API_TOKEN
+from config import BOT_CREATOR, CAN_CREATE_QUEUES, CHAT_IDS, DEFAULT_QUEUE_SIZE, MAX_QUEUE_NAME_LENGTH, MAX_QUEUE_SIZE
 
 with open("queues.txt", "rb") as f:
-    queues = pickle.load(f)
+    try:
+        queues = pickle.load(f)
+    except EOFError:
+        queues = {}
 
 queues: dict[int, dict[str, user_queue.Queue]] = queues
 
@@ -154,53 +157,6 @@ async def delete_all(message: types.Message):
     for i in list(queues.keys()):
         del queues[i]
     await message.answer(text="Done")
-
-
-@dp.message_handler(commands=["me"])
-async def me(message: types.Message):
-    if len(message.text.split()) < 4 and message.from_user.id != BOT_CREATOR:
-        await message.answer("Usage: /me Фамилия Имя Отчество")
-        return
-
-    try:
-        user = message.text.split(maxsplit=1)[1]
-    except IndexError:
-        user = 'Ягодин Захар Сергеевич'
-
-    async def get_data(user: str, table: str, tab: str, start: str, end: str, ):
-        async def generate_url():
-            URL_TEMPLATE = f"https://sheets.googleapis.com/v4/spreadsheets/" \
-                           f"{table}/values/" \
-                           f"{tab}!{start}:{end}?" \
-                           f"key={GOOGLE_TOKEN}"
-            async with ClientSession() as session:
-                async with session.get(URL_TEMPLATE) as response:
-                    return (await response.json()).get("values")
-
-        values = await generate_url()
-        values = values[0], [i for i in values[1:] if user in i][0]
-        values = list(map(list, zip(*values)))
-        values = [[i, j] for (i, j) in values if i in [
-            "Итого", "Итог фулл", 'Total', 'Mid term score']]
-        return values[0][1]
-
-    tables = {
-        "programming": ["1RDy1Fs8YmFQ7siXtub1wGKU5nnHTwHn6soBA4FvtPno", "Баллы", "A3", "Q"],
-        "algorithms": ["1UlkxAJ_PHAWjLDrZQYVE5Z_xjdaj1_9l1QnAmjyMdEI", "семестр 1", "A", "U"],
-        "discrete": ["1b202IiOF_Q11qLv8iVbJHKckKOaE1tPnNrSCmUYpjW4", "Scores", "A3", "P"],
-        "english (p1)": ["1NMf94E2Gv7gCe5bc5-BIj2afmoh2uqlMeqKnnZKE2G0", "Fall semester (weeks1-8)", "A2", "AE"],
-        "english (p2)": ["1NMf94E2Gv7gCe5bc5-BIj2afmoh2uqlMeqKnnZKE2G0", "Fall semester (weeks9-16)", "A2", "AG"],
-    }
-
-    msg = f"{user}\n"
-    for table, tab in tables.items():
-        msg += f"{table}:\n"
-        try:
-            msg += f"Total: {await get_data(user, *tab)}\n"
-        except IndexError:
-            msg += "Not found\n"
-        msg += "\n"
-    await message.answer(text=msg)
 
 
 @dp.message_handler(commands=["shutdown", "exit"])
